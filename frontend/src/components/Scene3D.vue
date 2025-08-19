@@ -7,11 +7,13 @@
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount, ref } from 'vue'
 import {
-    Scene, PerspectiveCamera, WebGLRenderer, BoxGeometry, Mesh, MeshPhysicalMaterial,
-    HemisphereLight, DirectionalLight, BufferGeometry, Float32BufferAttribute, Points, PointsMaterial, Clock, Vector2, SRGBColorSpace, ACESFilmicToneMapping
+    Scene, PerspectiveCamera, WebGLRenderer, Mesh, MeshPhysicalMaterial, BoxGeometry,
+    Points, PointsMaterial, BufferGeometry, Float32BufferAttribute, Clock, Vector2,
+    HemisphereLight, DirectionalLight, SRGBColorSpace, ACESFilmicToneMapping
 } from 'three'
 
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
+
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js'
 
@@ -21,28 +23,23 @@ gsap.registerPlugin(ScrollTrigger)
 
 const canvas = ref<HTMLCanvasElement | null>(null)
 
-
 let renderer: InstanceType<typeof WebGLRenderer>
 let scene: InstanceType<typeof Scene>
 let camera: InstanceType<typeof PerspectiveCamera>
-
-let composer: EffectComposer
+let composer: InstanceType<typeof EffectComposer>
 let animationId = 0
 
-// Objects
 let torus: InstanceType<typeof Mesh>
 let torusMaterial: InstanceType<typeof MeshPhysicalMaterial>
 let particles: InstanceType<typeof Points>
 const clock = new Clock()
 
-// Interaction state
 const pointer = new Vector2(0, 0)
 
 const init = () => {
     const w = window.innerWidth
     const h = window.innerHeight
 
-    // Renderer
     renderer = new WebGLRenderer({ canvas: canvas.value!, antialias: true, alpha: true })
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     renderer.setSize(w, h)
@@ -50,35 +47,24 @@ const init = () => {
     renderer.toneMapping = ACESFilmicToneMapping
     renderer.toneMappingExposure = 1.2
 
-    // Scene
     scene = new Scene()
-
-    // Camera
     camera = new PerspectiveCamera(60, w / h, 0.1, 100)
     camera.position.set(0, 0.6, 3.2)
     scene.add(camera)
 
-    // Lighting
     const hemi = new HemisphereLight(0xffffff, 0x222244, 0.6)
     scene.add(hemi)
-
     const dir = new DirectionalLight(0xffffff, 1.0)
     dir.position.set(3, 5, 2)
     scene.add(dir)
 
-    // Hero object
     const geo = new BoxGeometry(1, 1, 1)
     torusMaterial = new MeshPhysicalMaterial({
-        color: 0x4466ff,
-        metalness: 0.5,
-        roughness: 0.3,
-        clearcoat: 0.8,
-        clearcoatRoughness: 0.2
+        color: 0x4466ff, metalness: 0.5, roughness: 0.3, clearcoat: 0.8, clearcoatRoughness: 0.2
     })
     torus = new Mesh(geo, torusMaterial)
     scene.add(torus)
 
-    // Starfield
     const starCnt = 2000
     const pGeo = new BufferGeometry()
     const positions = new Float32Array(starCnt * 3)
@@ -95,22 +81,12 @@ const init = () => {
     particles = new Points(pGeo, pMat)
     scene.add(particles)
 
-    // Postprocessing
     composer = new EffectComposer(renderer)
-    const renderPass = new RenderPass(scene, camera)
-    const bloomPass = new UnrealBloomPass(new Vector2(w, h), 1.2, 0.9, 0.25)
-    composer.addPass(renderPass)
-    composer.addPass(bloomPass)
+    composer.addPass(new RenderPass(scene, camera))
+    composer.addPass(new UnrealBloomPass(new Vector2(w, h), 1.2, 0.9, 0.25))
 
-    // ScrollTrigger animations
-    gsap.to(camera.position, {
-        scrollTrigger: { trigger: '#section2', start: 'top center', end: 'bottom center', scrub: true },
-        z: 1.5, y: 0.2
-    })
-    gsap.to(camera.position, {
-        scrollTrigger: { trigger: '#section3', start: 'top center', end: 'bottom center', scrub: true },
-        z: 4, y: 1
-    })
+    gsap.to(camera.position, { scrollTrigger: { trigger: '#section2', start: 'top center', end: 'bottom center', scrub: true }, z: 1.5, y: 0.2 })
+    gsap.to(camera.position, { scrollTrigger: { trigger: '#section3', start: 'top center', end: 'bottom center', scrub: true }, z: 4, y: 1 })
 
     window.addEventListener('resize', onResize)
     window.addEventListener('pointermove', onPointerMove)
@@ -136,15 +112,12 @@ let nextBurst = 3 + Math.random() * 4
 
 const animate = () => {
     const t = clock.getElapsedTime()
-
-    // Parallax
     const parallaxX = pointer.x * 0.4
     const parallaxY = pointer.y * 0.2
     camera.position.x += (parallaxX - camera.position.x) * 0.04
     camera.position.y += (parallaxY * 0.6 - camera.position.y) * 0.04
     camera.lookAt(0, 0, 0)
 
-    // Burst trigger
     if (t - lastBurst > nextBurst) {
         burst.x = (Math.random() - 0.5) * 2
         burst.y = (Math.random() - 0.5) * 2
@@ -153,13 +126,10 @@ const animate = () => {
         nextBurst = 3 + Math.random() * 4
     }
 
-    // Rotation & floating
     const baseX = Math.sin(t * 0.6) * 0.4
     const baseY = Math.cos(t * 0.4) * 0.6
     const baseZ = Math.sin(t * 0.3) * 0.2
-    burst.x *= 0.95
-    burst.y *= 0.95
-    burst.z *= 0.95
+    burst.x *= 0.95; burst.y *= 0.95; burst.z *= 0.95
     torus.rotation.x += ((baseX + burst.x) - torus.rotation.x) * 0.05
     torus.rotation.y += ((baseY + burst.y) - torus.rotation.y) * 0.05
     torus.rotation.z += ((baseZ + burst.z) - torus.rotation.z) * 0.05
@@ -167,11 +137,7 @@ const animate = () => {
     const s = 1 + Math.sin(t * 1.6) * 0.03
     torus.scale.setScalar(s)
 
-    // Color cycle
-    const hue = (t * 0.05) % 1
-    torusMaterial.color.setHSL(hue, 0.7, 0.55)
-
-    // Stars drift
+    torusMaterial.color.setHSL((t * 0.05) % 1, 0.7, 0.55)
     particles.rotation.y += 0.0008
     particles.rotation.x += 0.0002
 
@@ -179,11 +145,7 @@ const animate = () => {
     animationId = requestAnimationFrame(animate)
 }
 
-onMounted(() => {
-    init()
-    animate()
-})
-
+onMounted(() => { init(); animate() })
 onBeforeUnmount(() => {
     cancelAnimationFrame(animationId)
     window.removeEventListener('resize', onResize)
