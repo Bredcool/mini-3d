@@ -1,5 +1,5 @@
 <template>
-    <div class="scene3d">
+    <div>
         <canvas ref="canvas"></canvas>
     </div>
 </template>
@@ -158,14 +158,6 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.scene3d {
-    position: relative;
-    width: 100vw;
-    height: 100vh;
-    overflow-x: hidden;
-    background: linear-gradient(160deg, #0b0f1a, #06080f 60%, #04050a 100%);
-}
-
 canvas {
     position: fixed;
     inset: 0;
